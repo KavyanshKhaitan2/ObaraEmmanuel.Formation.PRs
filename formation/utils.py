@@ -148,25 +148,36 @@ class CustomPropertyMixin:
         else:
             super().__setitem__(key, value)
 
-
-def event_handler(e, func, args, kwargs):
+    
+def callback_parse(command:str):
     """
-    A utility function to handle events and pass them to the
-    appropriate callback function with the event object as the first argument.
-    """
-    return func(e, *args, **kwargs)
-
-
-def callback_parse(command: str):
-    """
+    ## Added in Issue #32: https://github.com/ObaraEmmanuel/Formation/issues/32
+    
     Returns parts of a command after parsing it using eval method.
 
-    :param command: A string in the form ``funcname arg1, arg2, arg3, ..., kwarg1=value, kwarg2=value, ...``
-    :return: A tuple containing (funcname, args, kwargs)
+    Args:
+        ``command (str): . . `` command string.
+    
+    Command String Syntax:
+    	``funcname 1 "arg2",kwarg1="hello",kwarg2="world!"``
+
+    Returns:
+        ``command_func (str) : . . . . ``name of the function.
+        ``command_args (list): . . . . ``values of regular arguments.
+        ``command_kwargs (dict): . . . ``values of kwargs.
     """
 
-    command_list: list = command.split(' ')
-    command_func: str = command_list.pop(0)
-    command_string = ",".join(command_list).strip(",")
-    args, kwargs = eval(f'(lambda *args, **kwargs: (args, kwargs))({command_string})')
+    command_list:list = command.split('(')
+    command_func: str = command_list[0]
+    command_list.pop(0)
+    command_string = ""
+    for arg in command_list:
+        command_string+=(arg+'(')
+    command_string = command_string.rstrip('(')
+    
+    helper = lambda *a, **kw: (a, kw)
+    args, kwargs = eval(f'helper({command_string}')
+    #                                           ^^
+    # DO NOT add a closing bracket ")" at the end. command_string should contain an extra one.
     return command_func, args, kwargs
+
